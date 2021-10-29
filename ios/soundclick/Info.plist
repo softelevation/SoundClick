@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>soundclick</string>
+	<string>Simply Smile</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -21,7 +21,9 @@
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>1</string>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSAppTransportSecurity</key>
@@ -39,6 +41,8 @@
 	<string>$(PRODUCT_NAME) requires to access your camera to save the photo in gallery </string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>$(PRODUCT_NAME) want to use your location when clocking in and out. Clocking in through nearby feature may be rejected if location information is not provided.</string>
+	<key>NSMediaLibraryUsageDescription</key>
+	<string>$(PRODUCT_NAME) requires to access your music library to import the music in app library</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>$(PRODUCT_NAME) requires to access your photo library to save the photo in gallery</string>
 	<key>NSPhotoLibraryUsageDescription</key>

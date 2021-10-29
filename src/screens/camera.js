@@ -12,8 +12,15 @@ import {Modalize} from 'react-native-modalize';
 import {images} from '../assets';
 import {useNavigation} from '@react-navigation/core';
 import {RNCamera} from 'react-native-camera';
-import {SoundsData, textConstant} from '../utils/constants';
+import {colorConstant, textConstant} from '../utils/constants';
 import LoadingView from './LoadingView';
+import DocumentPicker from 'react-native-document-picker';
+import {getAsync, saveAsync} from '../utils/local-storage';
+import {
+  strictValidArrayWithLength,
+  strictValidObjectWithKeys,
+} from '../utils/commonUtils';
+
 const CameraScreen = () => {
   const modalizeRef = useRef();
   const cameraRef = useRef();
@@ -21,29 +28,131 @@ const CameraScreen = () => {
   const [takingPic, setTakingPic] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [rotateCamera, setRotateCamera] = useState(true);
-  const [flashType, setFlashType] = useState('on');
+  const [flashType, setFlashType] = useState('off');
+  const [soundFile, setFile] = useState([
+    {
+      id: 0,
+      name: 'Dog Sound',
+      fileName: 'dog',
+      duration: '21',
+      type: 'mp3',
+      isUrl: false,
+      playing: 'Dog Sound',
+    },
+    {
+      id: 1,
+      name: 'Cat Sound',
+      fileName: 'cat',
+      duration: '2',
+      type: 'mp3',
+      isUrl: false,
+      playing: 'Cat Sound',
+    },
+    {
+      id: 2,
+      name: 'Bird Sound',
+      fileName: 'bird',
+      duration: '15',
+      type: 'mp3',
+      isUrl: false,
+      playing: 'Bird Sound',
+    },
+    {
+      id: 3,
+      name: 'Baby Toy',
+      fileName: 'babytoy',
+      duration: '16',
+      type: 'wav',
+      isUrl: false,
+      playing: 'Baby Toy',
+    },
+    {
+      id: 4,
+      name: 'Baby Laughing',
+      fileName: 'babylaughing',
+      duration: '13',
+      type: 'mp3',
+      isUrl: false,
+      playing: 'Baby Laughing',
+    },
+  ]);
   const onOpen = () => {
     modalizeRef.current?.open();
   };
   const onClose = () => {
     modalizeRef.current?.close();
   };
-  const playSound = (v, type) => {
+  const playSound = (v, type, isUrl, name) => {
     try {
-      SoundPlayer.playSoundFile(v, type);
+      if (isUrl) {
+        SoundPlayer.playUrl(v);
+        setPlaying(name);
+      } else {
+        SoundPlayer.playSoundFile(v, type);
+        setPlaying(name);
+      }
     } catch (e) {
       console.log('cannot play the sound file', e);
     }
   };
 
+  const btnChooseResumeFile = async () => {
+    const v = await getAsync('sounds');
+    let soundsData = [];
+    try {
+      const res = await DocumentPicker.pick({
+        type: [DocumentPicker.types.audio],
+        copyTo: 'documentDirectory',
+      });
+
+      if (res.size > '2000000') {
+        alert('you can upload file max 2 mb');
+      } else {
+        const uriParts = res[0].name.split('.');
+        const data = {
+          ...res[0],
+          isUrl: true,
+          fileName: res[0].uri,
+          name: uriParts[0],
+          id: soundFile.length + 1,
+        };
+        setFile([...soundFile, data]);
+        if (strictValidObjectWithKeys(v)) {
+          var getSoundsFromPicker = await getAsync('sounds');
+          soundsData.push(getSoundsFromPicker);
+          soundsData.push(data);
+          saveAsync('sounds', soundsData);
+        } else {
+          saveAsync('sounds', data);
+        }
+        // }
+      }
+    } catch (err) {
+      if (DocumentPicker.isCancel(err)) {
+        // User cancelled the picker, exit any dialogs or menus and move on
+      } else {
+        throw err;
+      }
+    }
+  };
+  const getAsyncStorage = async () => {
+    const v = await getAsync('sounds');
+    if (strictValidArrayWithLength(v)) {
+      Array.prototype.push.apply(soundFile, v);
+      setFile(soundFile);
+    } else if (strictValidObjectWithKeys(v)) {
+      setFile([...soundFile, v]);
+    }
+  };
+  useEffect(() => {
+    getAsyncStorage();
+  }, []);
   useEffect(() => {
     let _onFinishedLoadingFileSubscription = SoundPlayer.addEventListener(
       'FinishedLoadingFile',
-      async ({success, name, type}) => {
-        console.log('finished loading file', success, name, type);
+      async ({success, name, type, url}) => {
         const info = await SoundPlayer.getInfo();
-        console.log(info, 'FinishedLoadingFile');
-        setPlaying(name);
+        // setPlaying(name);
         SoundPlayer.play();
       },
     );
@@ -65,7 +174,6 @@ const CameraScreen = () => {
       async ({success, url}) => {
         console.log('finished loading url', success, url);
         const info = await SoundPlayer.getInfo();
-        console.log(info, 'FinishedLoadingURL');
         // this.setState(...)
         SoundPlayer.play();
       },
@@ -79,12 +187,12 @@ const CameraScreen = () => {
   }, []);
 
   const getData = () => {
-    return SoundsData;
+    return soundFile;
   };
   const _renderItem = ({item}) => {
     return (
       <>
-        {playing === item.fileName ? (
+        {playing === item.playing ? (
           <>
             <TouchableOpacity
               style={styles.mainContent}
@@ -98,7 +206,7 @@ const CameraScreen = () => {
             <TouchableOpacity
               style={styles.mainContent}
               onPress={() => {
-                playSound(item.fileName, item.type);
+                playSound(item.fileName, item.type, item.isUrl, item.playing);
               }}>
               <Image source={images.play_icon} style={styles.playPauseIcon} />
               <Text style={styles.textColor}>{item.name}</Text>
@@ -110,11 +218,19 @@ const CameraScreen = () => {
   };
   const _renderHeader = () => {
     return (
-      <View style={styles.header}>
-        <Text style={styles.headerText} />
-        <Text style={styles.headerText}>{textConstant.Sounds}</Text>
-        <TouchableOpacity onPress={() => onClose()}>
-          <Image source={images.close_icon} style={styles.closeImage} />
+      <View>
+        <View style={styles.header}>
+          <Text style={styles.headerText} />
+          <Text style={styles.headerText}>{textConstant.Sounds}</Text>
+          <TouchableOpacity onPress={() => onClose()}>
+            <Image source={images.close_icon} style={styles.closeImage} />
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity
+          onPress={() => btnChooseResumeFile()}
+          style={styles.soundButton}>
+          <Text style={styles.buttonText}>Import Sound</Text>
         </TouchableOpacity>
       </View>
     );
@@ -206,7 +322,7 @@ const CameraScreen = () => {
       <Modalize
         useNativeDriver
         ref={modalizeRef}
-        modalHeight={500}
+        // modalHeight={500}
         modalStyle={styles.modal}
         overlayStyle={styles.overlay}
         flatListProps={{
@@ -283,6 +399,7 @@ const styles = StyleSheet.create({
   textColor: {
     color: '#000',
     fontSize: 14,
+    textTransform: 'capitalize',
   },
   closeImage: {
     height: 20,
@@ -300,6 +417,16 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   margin: {marginTop: 5},
+  soundButton: {
+    backgroundColor: colorConstant.secondary,
+    paddingVertical: 10,
+    marginHorizontal: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+    marginVertical: 5,
+  },
+  buttonText: {color: '#fff', fontWeight: 'bold'},
 });
 
 export default CameraScreen;

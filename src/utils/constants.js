@@ -25,6 +25,7 @@ export const SoundsData = [
     fileName: 'dog',
     duration: '21',
     type: 'mp3',
+    isUrl: false,
   },
   {
     id: 1,
@@ -32,6 +33,7 @@ export const SoundsData = [
     fileName: 'cat',
     duration: '2',
     type: 'mp3',
+    isUrl: false,
   },
   {
     id: 2,
@@ -39,6 +41,7 @@ export const SoundsData = [
     fileName: 'bird',
     duration: '15',
     type: 'mp3',
+    isUrl: false,
   },
   {
     id: 3,
@@ -46,6 +49,7 @@ export const SoundsData = [
     fileName: 'babytoy',
     duration: '16',
     type: 'wav',
+    isUrl: false,
   },
   {
     id: 4,
@@ -53,5 +57,6 @@ export const SoundsData = [
     fileName: 'babylaughing',
     duration: '13',
     type: 'mp3',
+    isUrl: false,
   },
 ];
