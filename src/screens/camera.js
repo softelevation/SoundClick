@@ -246,9 +246,10 @@ const CameraScreen = () => {
         quality: 0.85,
         fixOrientation: true,
         forceUpOrientation: true,
+        skipProcessing: true,
       };
 
-      setTakingPic(true);
+      // setTakingPic(true);
 
       try {
         const data = await cameraRef.current?.takePictureAsync(options);
